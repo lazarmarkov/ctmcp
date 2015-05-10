@@ -282,3 +282,114 @@ end
 
 {Browse {Flatten X}} % => [1 2 3 4 5 6]
 
+% 3.4.5 Queues
+
+
+% returns the last element in X and the rest of the list in L1
+% however this implementation is slow, since ButLast depends on the list size
+% i.e. it has O(n) time complexity
+declare
+fun {ButLast L ?X ?L1}
+   case L
+   of [Y] then X = Y L1 = nil
+   [] Y|L2 then L3 in
+      L1 = Y|L3
+      {ButLast L2 X L3}
+   end
+end
+
+%Amortizedd contant-time ephemeral queue
+
+declare
+fun {NewQueue} q(nil nil) end
+
+declare
+fun {Check Q}
+   case Q of q(nil R) then q({Reverse R} nil) else Q end
+end
+
+declare
+fun {Insert Q X}
+   case Q of q(F T) then {Check q(F X|T)} end
+end
+
+declare
+fun {Delete Q X}
+   case Q of q(F R) then F1 in F = X|F1 {Check q(F1 R)} end
+end
+
+
+declare X Y Z Z2 Z3 
+X={NewQueue}
+Y={Insert X 1} % => [[1] nil]
+Z={Insert Y 2} % => [[1] [2]]
+Z2={Insert Z 3} % => [[1] [3 2]]
+Z3={Delete Z2 _} % => pops [1] and reverses [3 2] => [[2 3] nil]. That's why this is an amortized implementation.
+{Browse Z3} 
+
+
+%Worst case constant time ephemeral queue
+
+declare
+fun {NewQueue} X in q(0 X X) end
+
+declare
+fun {Insert Q X}
+   case Q of q(N S E) then E1 in E=X|E1 q(N+1 S E1) end
+end
+
+declare
+fun {Delete Q X}
+   case Q of q(N S E) then S1 in S=X|S1 q(N-1 S1 E) end
+end
+
+declare
+fun {IsEmpty Q}
+   case Q of q(N S E) then Q==0 end
+end
+
+declare X Y Z Z2 Z3 Z4
+X={NewQueue} % => q(0 X X)
+Y={Insert X 1} % => q(1 1|X X)
+Z={Insert Y 2} % => q(2 1|2|X X)
+Z2={Insert Z 3} % => q(3 1|2|3|X X)
+
+%Example use
+declare Q1 Q2 Q3 Q4 Q5 Q6 Q7 in
+Q1={NewQueue}
+Q2={Insert Q1 peter}
+Q3={Insert Q2 paul}
+local X in Q4={Delete Q3 X} {Browse X} end
+Q5={Insert Q4 marty}
+local X in Q6={Delete Q5 X} {Browse X} end
+local X in Q7={Delete Q6 X} {Browse X} end
+
+% example with two versions
+% tip: use with the amortized queue function definitions
+declare Q1 Q2 Q3 Q4 Q5 Q6 in
+Q1={NewQueue}
+Q2={Insert Q1 peter}
+Q3={Insert Q2 paul}
+Q4={Insert Q2 mary}
+local X in Q5={Delete Q3 X} {Browse X} end
+local X in Q6={Delete Q4 X} {Browse X} end
+
+% Persistent queue
+declare
+proc {ForkD D ?E ?F}
+   D1#nil=D
+   E0#E1=E {Append D1 E0 E1}
+   F0#F1=F {Append D1 F0 F1}
+   in skip
+end
+
+declare
+proc {ForkQ Q ?Q1 ?Q2}
+   q(N S E)=Q
+   q(N S1 E1)=Q1
+   q(N S2 E2)=Q2
+in
+   {ForkD S#E S1#E1 S2#E2}
+end
+
+% 3.4 Trees
