@@ -392,4 +392,120 @@ in
    {ForkD S#E S1#E1 S2#E2}
 end
 
-% 3.4 Trees
+% 3.4.6 Trees
+
+% 3.4.6.2 Sorting information in trees
+declare
+fun {Lookup X T}
+   case T
+   of leaf then notfound
+   [] tree(K V L R) andthen K==X then found(V)
+   [] tree(K V L R) andthen X<K then {Lookup X L}
+   [] tree(K V L R) andthen X>K then {Lookup X R}
+   end
+end
+
+declare
+fun {Insert X V T}
+   case T
+   of leaf then tree(X V leaf leaf)
+   [] tree(K V1 L R) andthen X==K then tree(X V L R)
+   [] tree(K V1 L R) andthen X<K then tree(K V1 {Insert X V L} R)
+   [] tree(K V1 L R) andthen X>K then tree(K V1 L {Insert X V R})
+   end
+end
+
+%3.4.6.3 Deletion and tree reorganization
+
+declare
+fun {Delete X T}
+   case T
+   of leaf then leaf
+   [] tree(K V L R) andthen X==K then
+      case {RemoveSmallest R}
+      of none then L
+      [] Kp#Vp#Tp then tree(Kp Vp L Tp)
+      end
+   [] tree(K V L R) andthen X<K then tree(K V {Delete X L} R)
+   [] tree(K V L R) andthen X>K then tree(K V L {Delete X R})
+   end
+end
+
+declare
+fun {RemoveSmallest T}
+   case T
+   of leaf then none
+   [] tree(K V L R) then
+      case {RemoveSmallest L}
+      of none then K#V#R
+      [] Kp#Vp#Lp then Kp#Vp#tree(K V Lp R)
+      end
+   end
+end
+
+
+% 3.4.6.4 Tree traversal
+
+%Depth-first traversal
+
+declare
+proc {DFS T}
+   case T
+   of leaf then skip
+   [] tree(Key Val L R) then
+      {Browse Key#Val}
+      {DFS L}
+      {DFS R}
+   end
+end
+
+declare
+proc {DFSAccLoop T S1 ?Sn}
+   case T
+   of leaf then S1=Sn
+   [] tree(Key Val L R) then S2 S3 in
+      S2=Key#Val|S1
+      {DFSAccLoop L S2 S3}
+      {DFSAccLoop R S3 Sn}
+   end
+end
+
+declare
+fun {DFSAcc T} {Reverse {DFSAccLoop T nil $}} end
+
+declare
+proc {DFSAccLoop2 T ?S1 Sn}
+   case T of leaf
+   then S1=Sn
+   [] tree(Key Value L R) then S2 S3 in
+      S1=Key#Value|S2
+      {DFSAccLoop2 L S2 S3}
+      {DFSAccLoop2 R S3 Sn}
+   end
+end
+
+%Breadth-first traversal
+
+declare
+proc {BFS T}
+   fun{TreeInsert Q T}
+      if T\=leaf then {Insert Q T} else Q end
+   end
+
+   proc {BFSQueue Q1}
+      if {IsEmpty Q1} then skip
+      else X Q2 Key Value L R in
+	 Q2={Delete Q1 X}
+	 tree(Key Value L R)=X
+	 {Browse Key#Val}
+	 {BFSQueue {TreeInsert {TreeInsert Q2 L} R} }
+      end
+   end
+in
+   {BFSQueue {TreeInsert {NewQueue} T}}
+end
+
+      
+
+      
+
